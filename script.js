@@ -1,122 +1,171 @@
-const chatBox = document.getElementById("chat-box");
-const chatForm = document.getElementById("chat-form");
-const chatInput = document.getElementById("chat-input");
-const servers = document.querySelectorAll(".server");
-const chatHeader = document.getElementById("chat-header");
-const toggleThemeBtn = document.getElementById("toggle-theme");
-const app = document.getElementById("app");
-
-const profilePic = document.getElementById("profile-pic");
-const profileName = document.getElementById("profile-name");
-const profileStatus = document.getElementById("profile-status");
-const editProfileBtn = document.getElementById("edit-profile");
-const profileModal = document.getElementById("profile-modal");
-const usernameInput = document.getElementById("username-input");
-const profileImgInput = document.getElementById("profile-img-input");
+// DOM Elements
+const channels = document.querySelectorAll(".channel");
+const messagesContainer = document.getElementById("messages");
+const messageInput = document.getElementById("message-input");
+const currentChannelName = document.getElementById("current-channel-name");
+const userListUl = document.getElementById("user-list-ul");
 const statusSelect = document.getElementById("status-select");
-const saveProfileBtn = document.getElementById("save-profile");
-const closeModalBtn = document.getElementById("close-modal");
+const profileNameDisplay = document.getElementById("profile-name");
+const settingsBtn = document.getElementById("settings-btn");
+const settingsModal = document.getElementById("settings-modal");
+const closeSettingsBtn = document.getElementById("close-settings");
+const settingsUsernameInput = document.getElementById("settings-username");
+const saveUsernameBtn = document.getElementById("save-username");
+const themeToggleBtn = document.getElementById("theme-toggle");
 
-let currentChannel = "General";
-
-const emojiMap = {
-    ":smile:": "😄",
-    ":sad:": "😢",
-    ":thumbsup:": "👍",
-    ":heart:": "❤️",
-};
-
-function parseEmojis(text) {
-    return text.replace(/:\w+:/g, (match) => emojiMap[match] || match);
-}
-
-const defaultProfile = {
-    name: "User",
-    image: "https://via.placeholder.com/32",
+// Data
+let currentUser = {
+    name: "You",
     status: "online",
+    id: "user1",
+    profileImg: "https://via.placeholder.com/40",
 };
 
-let profile = JSON.parse(localStorage.getItem("profile")) || defaultProfile;
+const users = [
+    currentUser,
+    {
+        name: "Alice",
+        status: "online",
+        id: "user2",
+        profileImg: "https://via.placeholder.com/40",
+    },
+    {
+        name: "Bob",
+        status: "idle",
+        id: "user3",
+        profileImg: "https://via.placeholder.com/40",
+    },
+];
 
-function updateProfileUI() {
-    profileName.textContent = profile.name;
-    profilePic.src = profile.image;
-    profileStatus.className = `status-btn ${profile.status}`;
+const messages = {
+    general: [
+        { userId: "user2", text: "Hey, welcome to the general channel!" },
+        { userId: "user1", text: "Thanks! Glad to be here." },
+    ],
+    random: [{ userId: "user3", text: "Random chat is the best chat." }],
+    help: [{ userId: "user2", text: "Need help? Ask here." }],
+};
+
+let currentChannel = "general";
+
+// Functions
+
+function renderChannels() {
+    channels.forEach((ch) => {
+        ch.classList.toggle("active", ch.dataset.channel === currentChannel);
+    });
 }
 
-function openProfileModal() {
-    usernameInput.value = profile.name;
-    profileImgInput.value = profile.image;
-    statusSelect.value = profile.status;
-    profileModal.classList.remove("hidden");
+function renderMessages() {
+    messagesContainer.innerHTML = "";
+    messages[currentChannel].forEach(({ userId, text }) => {
+        const user = users.find((u) => u.id === userId);
+        const div = document.createElement("div");
+        div.classList.add("message");
+        div.innerHTML = `<strong>${user.name}:</strong> ${escapeHtml(text)}`;
+        messagesContainer.appendChild(div);
+    });
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-function saveProfile() {
-    profile.name = usernameInput.value || "User";
-    profile.image = profileImgInput.value || "https://via.placeholder.com/32";
-    profile.status = statusSelect.value;
-    localStorage.setItem("profile", JSON.stringify(profile));
-    updateProfileUI();
-    profileModal.classList.add("hidden");
+function renderUserList() {
+    userListUl.innerHTML = "";
+    users.forEach(({ id, name, status }) => {
+        const li = document.createElement("li");
+        li.classList.add("user-list-item");
+        li.innerHTML = `
+      <div class="user-status-dot user-status-${status}"></div> ${escapeHtml(
+            name
+        )}
+    `;
+        userListUl.appendChild(li);
+    });
 }
 
-editProfileBtn.addEventListener("click", openProfileModal);
-saveProfileBtn.addEventListener("click", saveProfile);
-closeModalBtn.addEventListener("click", () =>
-    profileModal.classList.add("hidden")
+function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML.replace(/\n/g, "<br>");
+}
+
+function sendMessage() {
+    const text = messageInput.value.trim();
+    if (!text) return;
+    messages[currentChannel].push({ userId: currentUser.id, text });
+    messageInput.value = "";
+    renderMessages();
+}
+
+function setStatus(newStatus) {
+    currentUser.status = newStatus;
+    statusSelect.value = newStatus;
+    renderUserList();
+}
+
+function setUsername(newName) {
+    currentUser.name = newName.trim() || currentUser.name;
+    profileNameDisplay.textContent = currentUser.name;
+    settingsUsernameInput.value = currentUser.name;
+    renderUserList();
+}
+
+// Event Listeners
+
+channels.forEach((ch) =>
+    ch.addEventListener("click", () => {
+        currentChannel = ch.dataset.channel;
+        currentChannelName.textContent = currentChannel;
+        renderChannels();
+        renderMessages();
+    })
 );
 
-// Chat logic
-const channels = JSON.parse(localStorage.getItem("channels")) || {
-    General: [],
-    Gaming: [],
-    Music: [],
-};
-
-function renderMessages(channel) {
-    chatBox.innerHTML = "";
-    channels[channel].forEach((msg) => {
-        const p = document.createElement("p");
-        p.innerHTML = parseEmojis(msg);
-        chatBox.appendChild(p);
-    });
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-chatForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const message = chatInput.value.trim();
-    if (message) {
-        const formatted = `${profile.name}: ${message}`;
-        channels[currentChannel].push(formatted);
-        saveChats();
-        renderMessages(currentChannel);
-        chatInput.value = "";
+messageInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
     }
 });
 
-servers.forEach((server) => {
-    server.addEventListener("click", () => {
-        servers.forEach((s) => s.classList.remove("active"));
-        server.classList.add("active");
-        currentChannel = server.textContent.replace("# ", "");
-        chatHeader.textContent = server.textContent;
-        renderMessages(currentChannel);
-    });
+statusSelect.addEventListener("change", (e) => {
+    setStatus(e.target.value);
 });
 
-toggleThemeBtn.addEventListener("click", () => {
-    app.classList.toggle("dark");
-    app.classList.toggle("light");
-    toggleThemeBtn.textContent = app.classList.contains("dark")
-        ? "☀️ Light Mode"
-        : "🌙 Dark Mode";
+settingsBtn.addEventListener("click", () => {
+    settingsModal.classList.remove("hidden");
+    settingsUsernameInput.value = currentUser.name;
+    settingsUsernameInput.focus();
 });
 
-function saveChats() {
-    localStorage.setItem("channels", JSON.stringify(channels));
-}
+closeSettingsBtn.addEventListener("click", () => {
+    settingsModal.classList.add("hidden");
+});
+
+saveUsernameBtn.addEventListener("click", () => {
+    setUsername(settingsUsernameInput.value);
+    settingsModal.classList.add("hidden");
+});
+
+settingsUsernameInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        saveUsernameBtn.click();
+    }
+});
+
+themeToggleBtn.addEventListener("click", () => {
+    document.body.classList.toggle("dark");
+    if (document.body.classList.contains("dark")) {
+        themeToggleBtn.textContent = "☀️";
+    } else {
+        themeToggleBtn.textContent = "🌙";
+    }
+});
 
 // Initial render
-updateProfileUI();
-renderMessages(currentChannel);
+renderChannels();
+renderMessages();
+renderUserList();
+profileNameDisplay.textContent = currentUser.name;
+settingsUsernameInput.value = currentUser.name;
+statusSelect.value = currentUser.status;

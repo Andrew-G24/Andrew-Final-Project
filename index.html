@@ -2,74 +2,90 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Mini Discord App</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Discord-like Chat App</title>
         <link rel="stylesheet" href="styles.css" />
     </head>
     <body>
-        <div id="app" class="light">
-            <aside id="sidebar">
-                <h2>Channels</h2>
-                <div class="server active"># General</div>
-                <div class="server"># Gaming</div>
-                <div class="server"># Music</div>
-                <button id="toggle-theme">🌙 Dark Mode</button>
-
-                <!-- 👤 Profile Section -->
-                <div id="profile-section">
-                    <img
-                        id="profile-pic"
-                        src="https://via.placeholder.com/32"
-                    />
-                    <div>
-                        <span id="profile-name">User</span><br />
-                        <button class="status-btn online" id="profile-status">
-                            ●
-                        </button>
+        <div id="app">
+            <!-- Left Sidebar -->
+            <nav class="sidebar">
+                <div class="server-icon">🌐</div>
+                <div class="channels">
+                    <div
+                        class="channel active"
+                        data-channel="general"
+                        tabindex="0"
+                    >
+                        # general
                     </div>
-                    <button id="edit-profile">⚙️</button>
+                    <div class="channel" data-channel="random" tabindex="0">
+                        # random
+                    </div>
+                    <div class="channel" data-channel="help" tabindex="0">
+                        # help
+                    </div>
                 </div>
-            </aside>
+            </nav>
 
-            <main id="chat-section">
-                <div id="chat-header"># General</div>
-                <div id="chat-box"></div>
-                <form id="chat-form">
-                    <input
-                        type="text"
-                        id="chat-input"
-                        placeholder="Type a message..."
-                        required
-                    />
-                    <button type="submit">Send</button>
-                </form>
+            <!-- Main Chat Area -->
+            <main class="chat-area">
+                <div class="chat-header">
+                    # <span id="current-channel-name">general</span>
+                </div>
+                <div class="messages" id="messages"></div>
+                <textarea
+                    id="message-input"
+                    placeholder="Type a message... (Shift+Enter for newline)"
+                    rows="2"
+                ></textarea>
             </main>
 
-            <aside id="user-list">
-                <h2>Online</h2>
-                <div class="user">
-                    <img src="https://via.placeholder.com/32" alt="User" />
-                    <span>Alice</span>
-                    <button class="status-btn online">●</button>
-                </div>
+            <!-- Right User List -->
+            <aside class="user-list">
+                <div class="user-list-header">Users Online</div>
+                <ul id="user-list-ul"></ul>
             </aside>
         </div>
 
-        <!-- 🛠 Profile Modal -->
-        <div id="profile-modal" class="modal hidden">
+        <!-- Bottom Left Profile Section -->
+        <footer id="profile-bar">
+            <div id="profile-info">
+                <img
+                    src="https://via.placeholder.com/40"
+                    alt="Profile"
+                    id="profile-img"
+                />
+                <div>
+                    <div id="profile-name">You</div>
+                    <select id="status-select" title="Change Status">
+                        <option value="online">🟢 Online</option>
+                        <option value="idle">🟠 Idle</option>
+                        <option value="offline">🔴 Offline</option>
+                    </select>
+                </div>
+            </div>
+            <button id="settings-btn" title="Settings ⚙️">⚙️</button>
+            <button id="theme-toggle" title="Toggle Dark/Light Mode">🌙</button>
+        </footer>
+
+        <!-- Settings Modal -->
+        <div
+            id="settings-modal"
+            class="hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="settings-title"
+        >
             <div class="modal-content">
-                <h3>Edit Profile</h3>
-                <label>Username</label>
-                <input type="text" id="username-input" /><br />
-                <label>Profile Image URL</label>
-                <input type="text" id="profile-img-input" /><br />
-                <label>Status</label>
-                <select id="status-select">
-                    <option value="online">Online</option>
-                    <option value="offline">Offline</option></select
-                ><br />
-                <button id="save-profile">Save</button>
-                <button id="close-modal">Cancel</button>
+                <h2 id="settings-title">Settings</h2>
+                <button id="close-settings" aria-label="Close settings modal">
+                    ✖ Close
+                </button>
+                <h3>Profile</h3>
+                <label for="settings-username">Change your name:</label>
+                <input type="text" id="settings-username" maxlength="20" />
+                <button id="save-username">Save</button>
             </div>
         </div>
 
