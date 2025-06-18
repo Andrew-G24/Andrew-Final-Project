@@ -1,5 +1,5 @@
 // DOM Elements
-const channels = document.querySelectorAll(".channel");
+const channelsContainer = document.querySelector(".channels");
 const messagesContainer = document.getElementById("messages");
 const messageInput = document.getElementById("message-input");
 const currentChannelName = document.getElementById("current-channel-name");
@@ -12,6 +12,8 @@ const closeSettingsBtn = document.getElementById("close-settings");
 const settingsUsernameInput = document.getElementById("settings-username");
 const saveUsernameBtn = document.getElementById("save-username");
 const themeToggleBtn = document.getElementById("theme-toggle");
+const addChannelBtn = document.getElementById("add-channel-btn");
+const deleteChannelBtn = document.getElementById("delete-channel-btn");
 
 // Data
 let currentUser = {
@@ -40,7 +42,6 @@ const users = [
 const messages = {
     general: [
         { userId: "user2", text: "Hey, welcome to the general channel!" },
-        { userId: "user1", text: "Thanks! Glad to be here." },
     ],
     random: [{ userId: "user3", text: "Random chat is the best chat." }],
     help: [{ userId: "user2", text: "Need help? Ask here." }],
@@ -51,18 +52,53 @@ let currentChannel = "general";
 // Functions
 
 function renderChannels() {
-    channels.forEach((ch) => {
-        ch.classList.toggle("active", ch.dataset.channel === currentChannel);
+    // Clear all except controls
+    const controls = channelsContainer.querySelector(".channel-controls");
+    channelsContainer.innerHTML = "";
+    // Add channel divs from messages keys
+    Object.keys(messages).forEach((chName) => {
+        const chDiv = document.createElement("div");
+        chDiv.classList.add("channel");
+        chDiv.dataset.channel = chName;
+        chDiv.tabIndex = 0;
+        chDiv.textContent = `# ${chName}`;
+        if (chName === currentChannel) chDiv.classList.add("active");
+
+        chDiv.setAttribute("draggable", "true");
+
+        chDiv.addEventListener("click", () => {
+            currentChannel = chName;
+            currentChannelName.textContent = currentChannel;
+            renderChannels();
+            renderMessages();
+        });
+
+        // Drag events
+        chDiv.addEventListener("dragstart", handleDragStart);
+        chDiv.addEventListener("dragover", handleDragOver);
+        chDiv.addEventListener("drop", handleDrop);
+        chDiv.addEventListener("dragend", handleDragEnd);
+
+        // Right-click context menu
+        chDiv.addEventListener("contextmenu", handleChannelContextMenu);
+
+        channelsContainer.appendChild(chDiv);
     });
+
+    // Append controls at end (add/delete buttons container)
+    if (controls) channelsContainer.appendChild(controls);
 }
 
 function renderMessages() {
     messagesContainer.innerHTML = "";
+    if (!messages[currentChannel]) return;
     messages[currentChannel].forEach(({ userId, text }) => {
         const user = users.find((u) => u.id === userId);
         const div = document.createElement("div");
         div.classList.add("message");
-        div.innerHTML = `<strong>${user.name}:</strong> ${escapeHtml(text)}`;
+        div.innerHTML = `<strong>${
+            user ? user.name : "Unknown"
+        }:</strong> ${escapeHtml(text)}`;
         messagesContainer.appendChild(div);
     });
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -91,6 +127,7 @@ function escapeHtml(text) {
 function sendMessage() {
     const text = messageInput.value.trim();
     if (!text) return;
+    if (!messages[currentChannel]) messages[currentChannel] = [];
     messages[currentChannel].push({ userId: currentUser.id, text });
     messageInput.value = "";
     renderMessages();
@@ -109,17 +146,174 @@ function setUsername(newName) {
     renderUserList();
 }
 
-// Event Listeners
+function addChannel() {
+    const name = prompt("Enter channel name (no # needed):");
+    if (!name) return;
 
-channels.forEach((ch) =>
-    ch.addEventListener("click", () => {
-        currentChannel = ch.dataset.channel;
+    const cleanName = name.trim().toLowerCase().replace(/\s+/g, "-");
+    if (!cleanName || messages[cleanName]) {
+        alert("Invalid or duplicate channel name.");
+        return;
+    }
+
+    messages[cleanName] = [];
+    currentChannel = cleanName;
+    currentChannelName.textContent = cleanName;
+    renderChannels();
+    renderMessages();
+}
+
+function deleteChannel() {
+    const keys = Object.keys(messages);
+    if (keys.length === 1) {
+        alert("You must have at least one channel.");
+        return;
+    }
+
+    if (confirm(`Delete channel "${currentChannel}"?`)) {
+        delete messages[currentChannel];
+
+        // Switch to first remaining channel
+        currentChannel = Object.keys(messages)[0];
         currentChannelName.textContent = currentChannel;
         renderChannels();
         renderMessages();
-    })
-);
+    }
+}
 
+// Drag and Drop Handlers
+let draggedElement = null;
+
+function handleDragStart(e) {
+    draggedElement = e.currentTarget;
+    e.currentTarget.classList.add("dragging");
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    const target = e.currentTarget;
+    if (target === draggedElement) return;
+
+    const bounding = target.getBoundingClientRect();
+    const offset = e.clientY - bounding.top;
+    const before = offset < bounding.height / 2;
+
+    const parent = target.parentNode;
+    if (before) {
+        parent.insertBefore(draggedElement, target);
+    } else {
+        parent.insertBefore(draggedElement, target.nextSibling);
+    }
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    if (!draggedElement) return;
+
+    draggedElement.classList.remove("dragging");
+
+    // Rebuild messages object in new order
+    const channelEls = channelsContainer.querySelectorAll(".channel");
+    const newOrder = Array.from(channelEls)
+        .map((el) => el.dataset.channel)
+        .filter((name) => messages.hasOwnProperty(name));
+
+    const newMessages = {};
+    newOrder.forEach((name) => {
+        newMessages[name] = messages[name];
+    });
+
+    // Overwrite messages with reordered channels
+    Object.keys(messages).forEach((k) => delete messages[k]);
+    Object.assign(messages, newMessages);
+
+    renderChannels(); // Reattach event listeners and update UI
+}
+
+function handleDragEnd() {
+    if (draggedElement) {
+        draggedElement.classList.remove("dragging");
+        draggedElement = null;
+    }
+}
+
+// Context menu for rename/delete
+function handleChannelContextMenu(e) {
+    e.preventDefault();
+    removeContextMenu();
+
+    const channelDiv = e.currentTarget; // The channel div that was right-clicked
+    const oldName = channelDiv.dataset.channel;
+
+    const menu = document.createElement("div");
+    menu.classList.add("channel-context-menu");
+    menu.style.position = "absolute";
+    menu.style.zIndex = 1000;
+
+    const renameBtn = document.createElement("button");
+    renameBtn.textContent = "Rename Channel";
+    renameBtn.onclick = () => {
+        const newName = prompt("New channel name:", oldName);
+        if (!newName) {
+            removeContextMenu();
+            return;
+        }
+        const cleanName = newName.trim().toLowerCase().replace(/\s+/g, "-");
+        if (cleanName && cleanName !== oldName && !messages[cleanName]) {
+            messages[cleanName] = messages[oldName];
+            delete messages[oldName];
+
+            // Update the channelDiv dataset and textContent
+            channelDiv.dataset.channel = cleanName;
+            channelDiv.textContent = `# ${cleanName}`;
+
+            if (currentChannel === oldName) {
+                currentChannel = cleanName;
+                currentChannelName.textContent = cleanName;
+            }
+
+            renderChannels();
+            renderMessages();
+        } else {
+            alert("Invalid or duplicate name.");
+        }
+        removeContextMenu();
+    };
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "Delete Channel";
+    deleteBtn.onclick = () => {
+        if (Object.keys(messages).length === 1) {
+            alert("Cannot delete the last channel.");
+        } else if (confirm(`Delete channel "${oldName}"?`)) {
+            delete messages[oldName];
+            if (currentChannel === oldName) {
+                currentChannel = Object.keys(messages)[0];
+                currentChannelName.textContent = currentChannel;
+            }
+            renderChannels();
+            renderMessages();
+        }
+        removeContextMenu();
+    };
+
+    menu.append(renameBtn, deleteBtn);
+    document.body.appendChild(menu);
+
+    const { clientX: x, clientY: y } = e;
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+
+    document.addEventListener("click", removeContextMenu);
+}
+
+function removeContextMenu() {
+    const existing = document.querySelector(".channel-context-menu");
+    if (existing) existing.remove();
+    document.removeEventListener("click", removeContextMenu);
+}
+
+// Event Listeners
 messageInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
@@ -154,15 +348,20 @@ settingsUsernameInput.addEventListener("keydown", (e) => {
 });
 
 themeToggleBtn.addEventListener("click", () => {
-    document.body.classList.toggle("dark");
-    if (document.body.classList.contains("dark")) {
-        themeToggleBtn.textContent = "☀️";
-    } else {
-        themeToggleBtn.textContent = "🌙";
-    }
+    const isDark = document.body.classList.toggle("dark");
+    document.body.classList.toggle("light", !isDark);
+
+    // Update icon
+    themeToggleBtn.textContent = isDark ? "☀️" : "🌙";
+
+    // Optional: Save preference
+    localStorage.setItem("theme", isDark ? "dark" : "light");
 });
 
-// Initial render
+addChannelBtn.addEventListener("click", addChannel);
+deleteChannelBtn.addEventListener("click", deleteChannel);
+
+// Initial render and setup
 renderChannels();
 renderMessages();
 renderUserList();

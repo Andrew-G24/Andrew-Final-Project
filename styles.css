@@ -19,7 +19,7 @@ body {
 #app {
     display: flex;
     flex: 1 1 auto;
-    height: calc(100vh - 60px); /* leave space for bottom profile bar */
+    height: calc(100vh - 60px);
     width: 100vw;
     overflow: hidden;
 }
@@ -32,7 +32,7 @@ body {
     flex-direction: column;
     padding: 10px 0;
     user-select: none;
-    z-index: 1; /* Ensure it's above other content */
+    z-index: 1;
 }
 
 .server-icon {
@@ -342,4 +342,133 @@ body.dark #save-username {
 
 body.dark #save-username:hover {
     background-color: #5a6ebc;
+}
+
+/* Light mode styles (SUMMER THEME UPDATED) */
+body.light {
+    background-color: #f2f3f5;
+    color: #2c2f33;
+}
+
+body.light .sidebar,
+body.light .user-list,
+body.light #profile-bar,
+body.light #settings-modal {
+    background-color: #ffffff;
+    color: #2c2f33;
+}
+
+body.light .channel {
+    color: #4f545c;
+}
+
+body.light .channel:hover,
+body.light .channel:focus {
+    background-color: #fff8b3; /* pale yellow */
+    color: #2c2f33;
+}
+
+body.light .channel.active {
+    background-color: #f9d71c; /* brighter yellow */
+    color: #2c2f33;
+}
+
+body.light .chat-area {
+    background-color: #fffde7; /* light cream */
+    color: #3e3a00;
+}
+
+body.light .chat-header {
+    border-bottom: 1px solid #e6e1b3;
+    color: #5a5500;
+}
+
+body.light .message {
+    color: #3e3a00;
+}
+
+body.light .message strong {
+    color: #f9d71c;
+}
+
+body.light #message-input {
+    background-color: #fffde7;
+    color: #3e3a00;
+}
+
+/* Channel Add/Delete Buttons */
+.channel-controls {
+    padding: 10px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.channel-controls button {
+    background-color: #40444b;
+    border: none;
+    color: white;
+    padding: 6px 10px;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.channel-controls button:hover {
+    background-color: #5865f2;
+}
+
+/* Extra spacing in Settings Modal */
+#settings-modal .modal-content > *:not(:last-child) {
+    margin-bottom: 15px;
+}
+
+/* Context menu */
+.channel-context-menu {
+    position: fixed;
+    background-color: #2f3136;
+    border: 1px solid #444;
+    border-radius: 5px;
+    z-index: 9999;
+    padding: 5px 0;
+    min-width: 150px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.channel-context-menu button {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    color: #ccc;
+    padding: 8px 12px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.channel-context-menu button:hover {
+    background-color: #5865f2;
+    color: white;
+}
+
+/* Drag & Drop visual cue */
+.channel.dragging {
+    opacity: 0.5;
+}
+
+/* Profile pics in user list */
+.user-list-item img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+    flex-shrink: 0;
+    background-color: #202225; /* fallback bg */
+}
+
+/* Update offline status dot to dark red */
+.user-status-offline {
+    background-color: #8b0000; /* dark red */
 }

@@ -3,10 +3,10 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Discord-like Chat App</title>
+        <title>Chat Messaging App</title>
         <link rel="stylesheet" href="styles.css" />
     </head>
-    <body>
+    <body class="dark">
         <div id="app">
             <!-- Left Sidebar -->
             <nav class="sidebar">
@@ -24,6 +24,18 @@
                     </div>
                     <div class="channel" data-channel="help" tabindex="0">
                         # help
+                    </div>
+
+                    <div class="channel-controls">
+                        <button id="add-channel-btn" title="Add Channel">
+                            ＋ Add
+                        </button>
+                        <button
+                            id="delete-channel-btn"
+                            title="Delete Current Channel"
+                        >
+                            − Delete
+                        </button>
                     </div>
                 </div>
             </nav>
@@ -51,11 +63,7 @@
         <!-- Bottom Left Profile Section -->
         <footer id="profile-bar">
             <div id="profile-info">
-                <img
-                    src="https://via.placeholder.com/40"
-                    alt="Profile"
-                    id="profile-img"
-                />
+                <img src="minecraft.png" alt="Profile" id="profile-img" />
                 <div>
                     <div id="profile-name">You</div>
                     <select id="status-select" title="Change Status">
